@@ -1,4 +1,4 @@
-package main
+package profiler
 
 import (
 	"fmt"
@@ -179,35 +179,4 @@ func write2File(formattedString []string) {
 //
 func bToKb(b uint64) uint64 {
 	return b / 1024
-}
-
-//##########################################################################################
-
-func Factorial(n int) int {
-	fact := 1
-	for i := 1; i <= n; i++ {
-		fact = fact * i
-	}
-	return fact
-}
-
-func Kuku() {
-	for i := 0; i < 10; i++ {
-		time.Sleep(1 * time.Millisecond)
-	}
-}
-
-func main() {
-	prof := NewRootProfiler("1212")
-	defer prof.EndProfile()
-	p := prof.StartProfile("fact")
-	_ = Factorial(101211111)
-	k := p.StartProfile("redis")
-	Kuku()
-	k.EndProfile()
-	m := p.StartProfile("mongo")
-	Kuku()
-	m.EndProfile()
-	p.EndProfile()
-	prof.StartProfile("fibonici")
 }

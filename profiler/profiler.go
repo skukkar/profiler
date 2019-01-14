@@ -63,14 +63,7 @@ func (p *rootProfiler) End() {
 	runtime.ReadMemStats(&m)
 
 	for _, eachProfiler := range p.profilers {
-		if !eachProfiler.closed {
-			eachProfiler.endMemory = bToKb(m.Alloc)
-			eachProfiler.endTime = time.Now()
-			eachProfiler.closed = true
-		}
-		if len(eachProfiler.profilers) > 0 {
-			eachProfiler.End()
-		}
+		eachProfiler.End()
 	}
 	formattedString := p.formatRootProfile()
 	write2File(formattedString)

@@ -23,20 +23,10 @@ type rootProfiler struct {
 	profilers []*profiler
 }
 
-type profiler struct {
-	name        string
-	startTime   time.Time
-	startMemory uint64
-	endMemory   uint64
-	endTime     time.Time
-	profilers   []*profiler
-	closed      bool
-}
-
 //
 //Newprofiler returns a new instance of  root profiler
 //
-func NewRootProfiler(requestId string) *rootProfiler {
+func NewRootProfiler(requestId string) ProfilerInterface {
 	if !PROFILER_SWITCH {
 		return nil
 	}
@@ -49,7 +39,7 @@ func NewRootProfiler(requestId string) *rootProfiler {
 //
 //StartProfile starts a profiling using profiler instance p at root level return new profiler
 //
-func (this *rootProfiler) StartProfile(key string) *profiler {
+func (this *rootProfiler) Start(key string) *profiler {
 	if !PROFILER_SWITCH {
 		return nil
 	}
@@ -65,26 +55,9 @@ func (this *rootProfiler) StartProfile(key string) *profiler {
 }
 
 //
-//start profile start profile on child level on key and return new profiler
-//also attach the same in root profiler
-//
-
-func (this *profiler) StartProfile(key string) *profiler {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-
-	newProfiler := new(profiler)
-	newProfiler.startTime = time.Now()
-	newProfiler.name = this.name + "_" + key
-	newProfiler.startMemory = bToKb(m.Alloc)
-	this.profilers = append(this.profilers, newProfiler)
-	return newProfiler
-}
-
-//
 //EndProfile ends the profiling using profiler instance p for all attached profiles.
 //
-func (p *rootProfiler) EndProfile() {
+func (p *rootProfiler) End() {
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
@@ -96,36 +69,11 @@ func (p *rootProfiler) EndProfile() {
 			eachProfiler.closed = true
 		}
 		if len(eachProfiler.profilers) > 0 {
-			eachProfiler.EndProfile()
+			eachProfiler.End()
 		}
 	}
 	formattedString := p.formatRootProfile()
 	write2File(formattedString)
-}
-
-//
-//clear all profiler attach wit parent recursive to clear all profilers
-//
-func (p *profiler) EndProfile() {
-
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	if !p.closed {
-		p.endTime = time.Now()
-		p.endMemory = bToKb(m.Alloc)
-		p.closed = true
-	}
-
-	for _, eachProfiler := range p.profilers {
-		if !eachProfiler.closed {
-			eachProfiler.endTime = time.Now()
-			eachProfiler.endMemory = bToKb(m.Alloc)
-			eachProfiler.closed = true
-		}
-		if len(eachProfiler.profilers) > 0 {
-			eachProfiler.EndProfile()
-		}
-	}
 }
 
 //
@@ -134,19 +82,6 @@ func (p *profiler) EndProfile() {
 
 func (this *rootProfiler) formatRootProfile() []string {
 	formattedString := make([]string, 0)
-	for _, eachProfiler := range this.profilers {
-		formattedString = append(formattedString, fmt.Sprintf("txnName %s timeTakenMS  %d memoryUsageKB %d  \n", eachProfiler.name, eachProfiler.endTime.Sub(eachProfiler.startTime).Nanoseconds()/timeUnit, eachProfiler.endMemory-eachProfiler.startMemory))
-		if len(eachProfiler.profilers) > 0 {
-			formattedString = append(formattedString, eachProfiler.formatChildProfile(formattedString)...)
-		}
-	}
-	return formattedString
-}
-
-//
-// format child profiler data
-//
-func (this *profiler) formatChildProfile(formattedString []string) []string {
 	for _, eachProfiler := range this.profilers {
 		formattedString = append(formattedString, fmt.Sprintf("txnName %s timeTakenMS  %d memoryUsageKB %d  \n", eachProfiler.name, eachProfiler.endTime.Sub(eachProfiler.startTime).Nanoseconds()/timeUnit, eachProfiler.endMemory-eachProfiler.startMemory))
 		if len(eachProfiler.profilers) > 0 {

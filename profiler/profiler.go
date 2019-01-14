@@ -10,9 +10,10 @@ import (
 
 //Niltime used when time is nil or no time captured
 const (
-	NilTime        = -1
-	timeUnit int64 = int64(time.Millisecond)
-	fileName       = "/tmp/profiler"
+	NilTime               = -1
+	timeUnit        int64 = int64(time.Millisecond)
+	fileName              = "/tmp/profiler"
+	PROFILER_SWITCH       = false
 )
 
 var rate float64 // rate to be used for monitoring
@@ -36,9 +37,9 @@ type profiler struct {
 //Newprofiler returns a new instance of  root profiler
 //
 func NewRootProfiler(requestId string) *rootProfiler {
-	// if !config.GlobalAppConfig.Profiler.Enable {
-	// 	return nil
-	// }
+	if !PROFILER_SWITCH {
+		return nil
+	}
 	rp := new(rootProfiler)
 	rp.requestId = requestId
 	rp.profilers = make([]*profiler, 0)
@@ -49,9 +50,9 @@ func NewRootProfiler(requestId string) *rootProfiler {
 //StartProfile starts a profiling using profiler instance p at root level return new profiler
 //
 func (this *rootProfiler) StartProfile(key string) *profiler {
-	// if !config.GlobalAppConfig.Profiler.Enable {
-	// 	return
-	// }
+	if !PROFILER_SWITCH {
+		return nil
+	}
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
@@ -84,9 +85,6 @@ func (this *profiler) StartProfile(key string) *profiler {
 //EndProfile ends the profiling using profiler instance p for all attached profiles.
 //
 func (p *rootProfiler) EndProfile() {
-	// if !config.GlobalAppConfig.Profiler.Enable {
-	// 	return NilTime
-	// }
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
